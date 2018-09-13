@@ -1,0 +1,32 @@
+{
+  "name": "EXPRESS",
+  "version": "1.0.0",
+  "description": "DATA REQUEST V1 FOR THANK YOU PARTY EVENT",
+  "main": "index.js",
+  "repository": "git@github.com:PROBOOKINGCENTER/EXPRESS.git",
+  "author": "chayakornwc <chayakorn.lpru@gmail.com>, PROBOOKINGCENTER CO.,LTD",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon index.js --exec babel-node --presets es2015,stage-2",
+    "dev": "necho \"Error: no dev specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "production":"hyper --name=event-probooking --env-file=.env -d --size=s2 --restart=always PROBOOKINGCENTER/EXPRESS:latest"
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "body-parser": "^1.18.3",
+    "cors": "^2.8.4",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "install": "^0.12.1",
+    "mailgun-js": "^0.20.0",
+    "moment": "^2.22.2",
+    "mysql": "^2.16.0",
+    "nodemon": "^1.18.4",
+    "npm": "^6.4.1"
+  }
+}
