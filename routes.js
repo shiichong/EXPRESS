@@ -1,5 +1,5 @@
 
-const attends = require('./model/attends');
+const attends = require('./src/models/attends');
 const wrap = fn => (...args) => fn (...args).catch(args[2])
 module.exports = function(app){
     app.get('/', (req,res)=>{
@@ -8,5 +8,5 @@ module.exports = function(app){
         res.end()
     })
 
-    app.post('/register',attends.registration)
+    app.post('/register', attends.create);
 }
