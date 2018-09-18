@@ -6,7 +6,7 @@ const attends = require('./src/models/registration');
 var env = process.env.NODE_ENV || 'development';
 var fs = require('fs');
 var path = require('path');
-
+const Op = Sequelize.Op
 // Ensure environment variables are read.
 var db = {};
 var sequelize = new Sequelize({
@@ -39,9 +39,9 @@ Object.keys(db).forEach(modelName => {
 if (db[modelName].associate) {
     db[modelName].associate(db);
 }
-
 });
-console.log(db)
+ db.op = Op
+
 
 module.exports = db;
 // const lookup = ()=> {
