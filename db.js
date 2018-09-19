@@ -1,14 +1,14 @@
 
 require('dotenv').config({path: __dirname + '/.env'});
 const Sequelize = require('sequelize');
-const mysql = require('mysql');
-const attends = require('./src/models/registration');
-var env = process.env.NODE_ENV || 'development';
 var fs = require('fs');
 var path = require('path');
 const Op = Sequelize.Op
-// Ensure environment variables are read.
+
 var db = {};
+
+
+// Ensure environment variables are read.
 var sequelize = new Sequelize({
               database: process.env.DB_NAME,
               dialect: 'mysql',

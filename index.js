@@ -14,13 +14,23 @@ app.use(bodyParser.json({type:'*/*'}));
 // app.use(connection)
 routes(app);
 
- 
-app.listen(process.env.PORT, ()=>{
-    console.log(`
-**********************************************************************************#
-# PROBOOKINGCENTER EVENTS LISTEN ON.                                         #
-# Make Wish to Hello world.                                                    #
-# ********************************************************************************#
-    `)
-    console.log(`SERVERING STARTED on port ${process.env.PORT}`)
-})
+
+ const main = async()=>{
+    console.log(`....Starting server`)
+    await sleep(1000);
+    app.listen(process.env.PORT, ()=>{
+        console.log(`@remove-on-eject-begin`)
+        console.log(`Copyright (c) 2018-present, Probooking, Inc.`)
+        console.log(`SERVERING STARTED on port ${process.env.PORT}`)
+        console.log(`@remove-on-eject-end`)
+    })
+}
+main();
+
+
+
+function sleep(ms){
+    return new Promise((resolve, rejecteds)=>{
+        setTimeout(resolve, ms)
+    })
+}

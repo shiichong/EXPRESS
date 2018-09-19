@@ -1,10 +1,14 @@
 
 
-const Db = require('./db') 
+const Db = require('./db')
 // Decare database module to name Db
 const moment = require('moment')
 moment.locale('th')
-
+// @remove-on-eject-begin
+/**
+ * Copyright (c) 2018-present, Probooking, Inc.
+ */
+// @remove-on-eject-end
 module.exports = function (app) {
     app.get('/', (req, res) => {
         res.setHeader('Content-Type', 'application/json')
@@ -12,6 +16,7 @@ module.exports = function (app) {
         res.write("WELCOMETO APIS JSON APPLICATION")
         res.end()
     })
+
     //REQUEST URL sites_path/registration/params->id/
     app.get('/registration/:id', (req, res, next) => {
         const { params } = req
@@ -25,10 +30,11 @@ module.exports = function (app) {
         }
 
     })
+
     //REQUEST URL sites_path/registration?limit=
     app.get('/registration', (req, res) => {
         const { query } = req
-        const option = {}
+        let option = {}
         if (parseInt(query.limit)) {
             option.limit = parseInt(query.limit)
         }
@@ -36,7 +42,15 @@ module.exports = function (app) {
             //do some stuff
         }
         if (query.term) {
+            option = {
+                ...option,
+                where: { [db.op.or]: [{ nickname: query.term }, { email: query.term }] }
+            }
+        }
 
+        // if REQUST HAS QUERY = qr // Purge all option
+        if (query.qr) {
+            option.where = { ref: query.qr }
         }
         Db
             .registration
@@ -48,6 +62,7 @@ module.exports = function (app) {
 
             })
     })
+
     app.post('/registration', async (req, res, next) => {
         const { body } = req
 
@@ -91,22 +106,22 @@ module.exports = function (app) {
         }
         const extis_email = await Db.registration.findAll({ where: { email: data.email } })
         if (extis_email.length > 0) {
-            console.log(extis_email)
             res.status(404).send({ message: 'already exits you\'re email' })
         } else {
             Db.registration.create(data).then(results => {
-                res.status(200).send({ status: 'successfully' })
+                res.status(200).send({ status: 'sucessfully' })
 
             }).catch(err => {
                 res.status(500).send({ status: 'failed', message: err })
             })
         }
     })
+
     app.delete('/registration/:id', (req, res) => {
         const { params } = req
         if (parseInt(params.id)) {
             Db.registration.destroy({ where: { registration_id: params.id } }).then(results => {
-                res.send({ status: 'successfully', message: results })
+                res.send({ status: 'suc\cessfully', message: results })
             }).catch(err => {
                 console.log(err)
                 res.status(500).send({ status: 'failed', message: 'critical error Db is offline' })
@@ -116,7 +131,8 @@ module.exports = function (app) {
         }
 
     })
-    app.put('/registration/:id',  async(req, res, next) => {
+
+    app.put('/registration/:id', async (req, res, next) => {
         const { body, params } = req
         if (!params.id && !parseInt(params.id)) {
             res.status(404).send({ status: 'failed', message: 'cannot put ' })
@@ -163,39 +179,114 @@ module.exports = function (app) {
         }
         // หาความซ้ำซ้อนของอีเมล 
         // await คือ รอตรงนี้ให้เสร็จก่อน
-        let extis_email =  await  Db.registration.findAll({
+        let extis_email = await Db.registration.findAll({
+            where: {
+                email: data.email,
+                registration_id: {
+                    [Db.op.ne]: [params.id]
+                }
+            }
+        }).then(function (results) {
+            return results
+        }).catch(err => {
+            res.status(500).send({ message: err })
+        })
+
+        if (extis_email.length === 0) {
+            Db.registration.update({
+                ...data
+            }, {
                     where: {
-                        email: data.email,
-                        registration_id: {
-                            [Db.op.ne]: [params.id]
-                          }
+                        registration_id: params.id
                     }
-                }).then(function(results){
-                  return results 
-                }).catch(err =>{
-                    res.status(500).send({message:err})
                 })
-              
-            if(extis_email.length === 0){
-                Db.registration.update({
-                    ...data
-                  }, {
-                    where: {
-                      registration_id: params.id
-                    }
-                  })
                 .then(_results => {
-                    res.status(200).send({ status: 'successfully' })
+                    res.status(200).send({ status: 'sucessfully' })
                 }).catch(err => {
                     res.status(500).send({ status: 'failed', message: err })
                 })
-            }else{
-                res.status(404).send({ message: 'already exits you\'re email' })
-            }
-        
-    })
-    // app.get(event)
+        } else {
+            res.status(404).send({ message: 'already exits you\'re email' })
+        }
 
+    })
+    app.get('/event', function (req, res) {
+        const { query } = req
+        let option = {}
+        if (parseInt(query.limit)) {
+            option.limit = parseInt(query.limit)
+        }
+        if (query.order) {
+            //do some stuff
+        }
+        if (query.term) {
+            option = {
+                ...option,
+                where: { [db.op.or]: [{ event_name: query.term }, { event_location: query.term }, { event_type: query.term }] }
+            }
+        }
+        Db
+            .event_info
+            .findAll({ ...option })
+            .then((results) => {
+                res.send({ payload: results })
+            }).catch((err) => {
+                res.send(err)
+            })
+    })
+    app.get('/event/:id', (req, res) => {
+        const { params } = req
+        if (!parseInt(params.id)) {
+            res.status(404).send({ status: 'failed', message: "Error (URL) is unavailable resource Not Found" })
+        }
+        Db.event_info
+            .findOne({
+                where: {
+                    event_id:params.id
+                }
+            }).then(results=>{
+                if(!results) return res.status(404).send({status:'sucessfully',message: "Error Data is not Found!"});
+                 res.send({payload:results})
+            }).catch(err =>{
+                res.status(500).send({status:'Failed REQUEST is Critical error',message:err})
+            })
+    })
+    app.post('/event', (req,res)=>{
+            const {body} = req
+            let data = {...body, created_stamp:moment().format("YYYY-MM-DD HH:mm")}
+            Db.event_info.create({...data}).then(results=>{
+                res.send({status:'sucessfully'})
+            }).catch(err=>{
+                res.status(500).send({status:'failed', message:err})
+            })
+    })
+    app.put('/event/:id', (req,res)=>{
+        const {body,params} = req
+        if(!parseInt(params.id)){
+            res.status(404).send({ status: 'failed', message: "Error (URL) is unavailable resource Not Found" })
+        }
+        let data = {...body, update_stamp:moment().format("YYYY-MM-DD HH:mm")}
+        if(data.created_stamp){
+            delete(data.created_stamp);
+        }
+        Db.event_info.update({...data}, {where:{event_id:params.id}}).then(results=>{
+            res.send({status:'sucessfully'});
+        }).catch(err=>{
+            res.status(500).send({status:"failed",message:'Error catches databse connection'})
+        })
+
+    })
+    app.delete('/event/:id', (req, res)=>{
+        const {params} = req;
+        if(!parseInt(params.id)){
+            res.status(404).send({status:"failed",message:"Error not Found your id parameter of integer"})
+        }
+        Db.event_info.destroy({where:{event_id:params.id}}).then(results=>{
+            res.send({status:"sucessfully"})
+        }).catch(err=>{
+            res.status(500).send({status:"failed", message:err})
+        })
+    })
 
 }
 
@@ -207,21 +298,4 @@ function makeReference() {
     }
     return text
 
-}
-function check_exits_email(email, id){
-        return new Promise (function (resolve, rejected){
-            Db.registration.findAll({
-                    where: {
-                        email: email,
-                        registration_id: {
-                            [Db.op.ne]: id
-                          }
-                    },
-                }).then(results=>{
-                    resolve(results)
-                   
-                }).catch(err=>{
-                    rejected(err)
-                })
-        });
 }
