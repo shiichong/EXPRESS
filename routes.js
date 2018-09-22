@@ -1,14 +1,19 @@
 
-
+require('dotenv').config({path: __dirname + '/.env'});
 const Db = require('./db')
+const stream = require('stream');
 // Decare database module to name Db
 const moment = require('moment')
+var AWS = require('aws-sdk');
 moment.locale('th')
+const fs = require('fs')
+var qr = require('qr-image')
 // @remove-on-eject-begin
 /**
  * Copyright (c) 2018-present, Probooking, Inc.
  */
 // @remove-on-eject-end
+
 module.exports = function (app) {
     app.get('/', (req, res) => {
         res.setHeader('Content-Type', 'application/json')
@@ -108,12 +113,21 @@ module.exports = function (app) {
         if (extis_email.length > 0) {
             res.status(404).send({ message: 'already exits you\'re email' })
         } else {
-            Db.registration.create(data).then(results => {
-                res.status(200).send({ status: 'sucessfully' })
-
-            }).catch(err => {
-                res.status(500).send({ status: 'failed', message: err })
-            })
+           let insert = await insertRegistration(data)
+           var s3 = new AWS.S3()
+           
+            var qr_code =  qr.imageSync(insert.ref,{type:'png'});
+                var params = {Bucket:'probookingcenter/event/qrcode', Key:`${insert.ref}.png`, Body:qr_code, ContentType: 'image/png'}
+                s3.putObject(params, function(err, data) {
+                    if (err) {
+                        console.log(err)
+           
+                    } else {
+                        console.log(`Successfully uploaded data qrcode`);
+                    }
+           
+                 });
+               
         }
     })
 
@@ -123,7 +137,7 @@ module.exports = function (app) {
             Db.registration.destroy({ where: { registration_id: params.id } }).then(results => {
                 res.send({ status: 'suc\cessfully', message: results })
             }).catch(err => {
-                console.log(err)
+              
                 res.status(500).send({ status: 'failed', message: 'critical error Db is offline' })
             })
         } else {
@@ -178,7 +192,6 @@ module.exports = function (app) {
             ...body,
         }
         // หาความซ้ำซ้อนของอีเมล 
-        // await คือ รอตรงนี้ให้เสร็จก่อน
         let extis_email = await Db.registration.findAll({
             where: {
                 email: data.email,
@@ -251,6 +264,7 @@ module.exports = function (app) {
                 res.status(500).send({status:'Failed REQUEST is Critical error',message:err})
             })
     })
+    
     app.post('/event', (req,res)=>{
             const {body} = req
             let data = {...body, created_stamp:moment().format("YYYY-MM-DD HH:mm")}
@@ -260,6 +274,7 @@ module.exports = function (app) {
                 res.status(500).send({status:'failed', message:err})
             })
     })
+
     app.put('/event/:id', (req,res)=>{
         const {body,params} = req
         if(!parseInt(params.id)){
@@ -276,6 +291,7 @@ module.exports = function (app) {
         })
 
     })
+
     app.delete('/event/:id', (req, res)=>{
         const {params} = req;
         if(!parseInt(params.id)){
@@ -290,12 +306,28 @@ module.exports = function (app) {
 
 }
 
+
+
 function makeReference() {
     let text = "";
     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 6; i++) {
         text += possible.charAt(Math.floor(Math.random() * possible.length))
     }
+    
     return text
+
+}
+function insertRegistration(body){
+    console.log(body)
+    return new Promise(function(resolve,rejected){
+        Db.registration.create(body).then(function(results){
+            resolve(results)
+        }).catch(function(err){
+            rejected(err)
+        })
+    })
+}
+function qrcode_generator(body){
 
 }
