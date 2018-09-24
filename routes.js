@@ -1,13 +1,17 @@
 
-require('dotenv').config({path: __dirname + '/.env'});
+require('dotenv').config({ path: __dirname + '/.env' });
 const Db = require('./db')
 const stream = require('stream');
 // Decare database module to name Db
 const moment = require('moment')
-var AWS = require('aws-sdk');
-moment.locale('th')
 const fs = require('fs')
 var qr = require('qr-image')
+var jsBarcode = require('jsbarcode');
+var Canvas = require('canvas'),
+    Canvas = new Canvas(400, 200)
+var AWS = require('aws-sdk');
+moment.locale('th')
+
 // @remove-on-eject-begin
 /**
  * Copyright (c) 2018-present, Probooking, Inc.
@@ -71,6 +75,7 @@ module.exports = function (app) {
     app.post('/registration', async (req, res, next) => {
         const { body } = req
 
+
         if (!body.event_id) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.send({ message: 'missing event id field!' })
@@ -113,21 +118,30 @@ module.exports = function (app) {
         if (extis_email.length > 0) {
             res.status(404).send({ message: 'already exits you\'re email' })
         } else {
-           let insert = await insertRegistration(data)
-           var s3 = new AWS.S3()
-           
-            var qr_code =  qr.imageSync(insert.ref,{type:'png'});
-                var params = {Bucket:'probookingcenter/event/qrcode', Key:`${insert.ref}.png`, Body:qr_code, ContentType: 'image/png'}
-                s3.putObject(params, function(err, data) {
-                    if (err) {
-                        console.log(err)
-           
-                    } else {
-                        console.log(`Successfully uploaded data qrcode`);
-                    }
-           
-                 });
-               
+            let insert = await insertRegistration(data)
+            var s3 = new AWS.S3()
+            await jsBarcode(Canvas, insert.ref, { format: "CODE128" });
+            var bar_code = await  Canvas.pngStream(),
+             qr_code = await qr.imageSync(insert.ref, { type: 'png' }),
+             params1 = { Bucket: 'probookingcenter/event/qrcode', Key: `${insert.ref}.png`, Body: qr_code, ContentType: 'image/png' },
+             params2 = { Bucket: 'probookingcenter/event/barcode', Key: `${insert.ref}.png`, Body: bar_code.canvas.toBuffer(), ContentType: 'image/png' }
+            s3.putObject(params1, function (err, data) {
+                if (err) {
+                    res.status(500).send({status:"failed", message:"Could not upload qrcode to middleware" })
+                } else {
+                    console.log(`Successfully uploaded data qrcode`);
+                }
+
+            });
+            s3.putObject(params2, function (err, data) {
+                if (err) {
+                    res.status(500).send({status:"failed", message:"Could not upload barcode to middleware" })
+                }else{
+                    console.log(`Successfully uploaded data barcode`);
+                }
+
+            });
+            res.send({message:"Sucessfully registration"})
         }
     })
 
@@ -137,7 +151,7 @@ module.exports = function (app) {
             Db.registration.destroy({ where: { registration_id: params.id } }).then(results => {
                 res.send({ status: 'suc\cessfully', message: results })
             }).catch(err => {
-              
+
                 res.status(500).send({ status: 'failed', message: 'critical error Db is offline' })
             })
         } else {
@@ -255,52 +269,52 @@ module.exports = function (app) {
         Db.event_info
             .findOne({
                 where: {
-                    event_id:params.id
+                    event_id: params.id
                 }
-            }).then(results=>{
-                if(!results) return res.status(404).send({status:'sucessfully',message: "Error Data is not Found!"});
-                 res.send({payload:results})
-            }).catch(err =>{
-                res.status(500).send({status:'Failed REQUEST is Critical error',message:err})
-            })
-    })
-    
-    app.post('/event', (req,res)=>{
-            const {body} = req
-            let data = {...body, created_stamp:moment().format("YYYY-MM-DD HH:mm")}
-            Db.event_info.create({...data}).then(results=>{
-                res.send({status:'sucessfully'})
-            }).catch(err=>{
-                res.status(500).send({status:'failed', message:err})
+            }).then(results => {
+                if (!results) return res.status(404).send({ status: 'sucessfully', message: "Error Data is not Found!" });
+                res.send({ payload: results })
+            }).catch(err => {
+                res.status(500).send({ status: 'Failed REQUEST is Critical error', message: err })
             })
     })
 
-    app.put('/event/:id', (req,res)=>{
-        const {body,params} = req
-        if(!parseInt(params.id)){
+    app.post('/event', (req, res) => {
+        const { body } = req
+        let data = { ...body, created_stamp: moment().format("YYYY-MM-DD HH:mm") }
+        Db.event_info.create({ ...data }).then(results => {
+            res.send({ status: 'sucessfully' })
+        }).catch(err => {
+            res.status(500).send({ status: 'failed', message: err })
+        })
+    })
+
+    app.put('/event/:id', (req, res) => {
+        const { body, params } = req
+        if (!parseInt(params.id)) {
             res.status(404).send({ status: 'failed', message: "Error (URL) is unavailable resource Not Found" })
         }
-        let data = {...body, update_stamp:moment().format("YYYY-MM-DD HH:mm")}
-        if(data.created_stamp){
-            delete(data.created_stamp);
+        let data = { ...body, update_stamp: moment().format("YYYY-MM-DD HH:mm") }
+        if (data.created_stamp) {
+            delete (data.created_stamp);
         }
-        Db.event_info.update({...data}, {where:{event_id:params.id}}).then(results=>{
-            res.send({status:'sucessfully'});
-        }).catch(err=>{
-            res.status(500).send({status:"failed",message:'Error catches databse connection'})
+        Db.event_info.update({ ...data }, { where: { event_id: params.id } }).then(results => {
+            res.send({ status: 'sucessfully' });
+        }).catch(err => {
+            res.status(500).send({ status: "failed", message: 'Error catches databse connection' })
         })
 
     })
 
-    app.delete('/event/:id', (req, res)=>{
-        const {params} = req;
-        if(!parseInt(params.id)){
-            res.status(404).send({status:"failed",message:"Error not Found your id parameter of integer"})
+    app.delete('/event/:id', (req, res) => {
+        const { params } = req;
+        if (!parseInt(params.id)) {
+            res.status(404).send({ status: "failed", message: "Error not Found your id parameter of integer" })
         }
-        Db.event_info.destroy({where:{event_id:params.id}}).then(results=>{
-            res.send({status:"sucessfully"})
-        }).catch(err=>{
-            res.status(500).send({status:"failed", message:err})
+        Db.event_info.destroy({ where: { event_id: params.id } }).then(results => {
+            res.send({ status: "sucessfully" })
+        }).catch(err => {
+            res.status(500).send({ status: "failed", message: err })
         })
     })
 
@@ -314,20 +328,18 @@ function makeReference() {
     for (var i = 0; i < 6; i++) {
         text += possible.charAt(Math.floor(Math.random() * possible.length))
     }
-    
+
     return text
 
 }
-function insertRegistration(body){
-    console.log(body)
-    return new Promise(function(resolve,rejected){
-        Db.registration.create(body).then(function(results){
+function insertRegistration(body) {
+  
+    return new Promise(function (resolve, rejected) {
+        Db.registration.create(body).then(function (results) {
             resolve(results)
-        }).catch(function(err){
+        }).catch(function (err) {
             rejected(err)
         })
     })
 }
-function qrcode_generator(body){
 
-}
