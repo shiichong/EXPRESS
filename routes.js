@@ -9,7 +9,8 @@ var qr = require('qr-image')
 var jsBarcode = require('jsbarcode');
 var Canvas = require('canvas'),
     Canvas = new Canvas(400, 200)
-var AWS = require('aws-sdk');
+var AWS = require('aws-sdk'),
+transporter = require('./src/mailer');
 moment.locale('th')
 
 // @remove-on-eject-begin
@@ -123,9 +124,10 @@ module.exports = function (app) {
             await jsBarcode(Canvas, insert.ref, { format: "CODE128" });
             var bar_code = await  Canvas.pngStream(),
              qr_code = await qr.imageSync(insert.ref, { type: 'png' }),
-             params1 = { Bucket: 'probookingcenter/event/qrcode', Key: `${insert.ref}.png`, Body: qr_code, ContentType: 'image/png' },
-             params2 = { Bucket: 'probookingcenter/event/barcode', Key: `${insert.ref}.png`, Body: bar_code.canvas.toBuffer(), ContentType: 'image/png' }
-            s3.putObject(params1, function (err, data) {
+             params1 = { Bucket: 'probookingcenter/event/qrcode', Key: `${insert.ref}.png`, Body: qr_code, ContentType: 'image/png',ACL:'public-read' },
+             params2 = { Bucket: 'probookingcenter/event/barcode', Key: `${insert.ref}.png`, Body: bar_code.canvas.toBuffer(), ContentType: 'image/png',ACL:'public-read' },
+             messageEmail = {subject: 'PROBOOKINGCENTER Thank you event', ref:insert.ref, recipient:insert.email, company:insert.company_name, agency:`${insert.first_name} ${insert.last_name}`}
+          await  s3.putObject(params1, function (err, data) {
                 if (err) {
                     res.status(500).send({status:"failed", message:"Could not upload qrcode to middleware" })
                 } else {
@@ -133,7 +135,7 @@ module.exports = function (app) {
                 }
 
             });
-            s3.putObject(params2, function (err, data) {
+           await s3.putObject(params2, function (err, data) {
                 if (err) {
                     res.status(500).send({status:"failed", message:"Could not upload barcode to middleware" })
                 }else{
@@ -141,7 +143,14 @@ module.exports = function (app) {
                 }
 
             });
-            res.send({message:"Sucessfully registration"})
+            transporter.sendMail(messageEmail,(error, success)=> {
+                if (error) {
+                     console.log(error);
+                } else {
+                    res.send({message:"Sucessfully registration"})
+                }
+             });
+         
         }
     })
 
@@ -317,6 +326,9 @@ module.exports = function (app) {
             res.status(500).send({ status: "failed", message: err })
         })
     })
+
+   
+   
 
 }
 
