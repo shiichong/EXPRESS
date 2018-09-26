@@ -10,7 +10,7 @@ var jsBarcode = require('jsbarcode');
 var Canvas = require('canvas'),
     Canvas = new Canvas(400, 200)
 var AWS = require('aws-sdk'),
-transporter = require('./src/mailer');
+transpoter = require('./src/mailer');
 moment.locale('th')
 
 // @remove-on-eject-begin
@@ -32,7 +32,7 @@ module.exports = function (app) {
         const { params } = req
         // CHECK params id == integer ?
         if (parseInt(params.id)) {
-            Db.registration.findAll({ where: { registration_id: params.id } }).then(results => {
+            Db.event_registration.findAll({ where: { registration_id: params.id } }).then(results => {
                 res.send(results);
             }).catch(err => {
                 res.status(500).send({ status: failed, message: err })
@@ -63,7 +63,7 @@ module.exports = function (app) {
             option.where = { ref: query.qr }
         }
         Db
-            .registration
+            .event_registration
             .findAll({ ...option })
             .then((results) => {
                 res.send({ payload: results })
@@ -115,7 +115,7 @@ module.exports = function (app) {
             ref: makeReference(),
             created_stamp: moment().format("YYYY-MM-DD HH:mm")
         }
-        const extis_email = await Db.registration.findAll({ where: { email: data.email } })
+        const extis_email = await Db.event_registration.findAll({ where: { email: data.email } })
         if (extis_email.length > 0) {
             res.status(404).send({ message: 'already exits you\'re email' })
         } else {
@@ -143,13 +143,10 @@ module.exports = function (app) {
                 }
 
             });
-            transporter.sendMail(messageEmail,(error, success)=> {
-                if (error) {
-                     console.log(error);
-                } else {
-                    res.send({message:"Sucessfully registration"})
-                }
-             });
+            transpoter(messageEmail)
+            res.send({status:'successfully'})
+                
+           
          
         }
     })
@@ -347,7 +344,7 @@ function makeReference() {
 function insertRegistration(body) {
   
     return new Promise(function (resolve, rejected) {
-        Db.registration.create(body).then(function (results) {
+        Db.event_registration.create(body).then(function (results) {
             resolve(results)
         }).catch(function (err) {
             rejected(err)
