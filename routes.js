@@ -35,7 +35,7 @@ module.exports = function (app) {
             Db.event_registration.findAll({ where: { registration_id: params.id } }).then(results => {
                 res.send(results);
             }).catch(err => {
-                res.status(500).send({ status: failed, message: err })
+                res.status(500).send({ status: 'failed', message: err })
             })
         }
 
@@ -75,11 +75,10 @@ module.exports = function (app) {
 
     app.post('/registration', async (req, res, next) => {
         const { body } = req
-
+        console.log(body)
 
         if (!body.event_id) {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.send({ message: 'missing event id field!' })
+            res.status(404).send({ message: 'missing event id field!' })
         }
         if (!body.first_name) {
             res.status(404).send({ message: 'missing first name field!' })
@@ -168,6 +167,7 @@ module.exports = function (app) {
 
     app.put('/registration/:id', async (req, res, next) => {
         const { body, params } = req
+      
         if (!params.id && !parseInt(params.id)) {
             res.status(404).send({ status: 'failed', message: 'cannot put ' })
         }
@@ -203,6 +203,7 @@ module.exports = function (app) {
         if (!body.company_name) {
             res.status(404).send({ message: 'missing company name field!' })
         }
+    
         //      เตรียมข้อมูลก่อนตรงนี้  ข้อมูลจะออกมาหน้าตาประมาณนี้ {
         //         email: body.email
         //         username:body.username
@@ -222,6 +223,7 @@ module.exports = function (app) {
         }).then(function (results) {
             return results
         }).catch(err => {
+            console.log(err)
             res.status(500).send({ message: err })
         })
 
@@ -347,7 +349,7 @@ function insertRegistration(body) {
         Db.event_registration.create(body).then(function (results) {
             resolve(results)
         }).catch(function (err) {
-            rejected(err)
+            rejected({status:'failed', message:err})
         })
     })
 }
