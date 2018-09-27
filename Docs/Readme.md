@@ -1,5 +1,5 @@
 
-## Other projects
+## EVENT API Documentation
 
 | Endpoints | description |Request fields|
 | --- | --- | ------|
