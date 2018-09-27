@@ -1,14 +1,10 @@
 
 ## Other projects
 
-| Project | Link |
-| --- | --- |
-| React Bangkok 3.0.0 website | https://github.com/reactbkk/3.0.0 |
-| React in Patterns (TH) Book | https://reactbkk.gitbook.io/react-in-patterns-th/ |
-| GitHub issue bot | https://github.com/reactbkk/3.0.0-issue-bot |
-| Poster image generator | https://github.com/reactbkk/3.0.0-posters-nametags |
-| Name tag generator | https://github.com/reactbkk/3.0.0-posters-nametags |
-| Ticket checkin & fulfillment system | https://github.com/dtinth/ticket-checkin |
-| Tweetboard | https://github.com/reactbkk/tweetboard-frontend |
-| Countdown timer | https://github.com/reactbkk/countdown-timer |
-| React Bangkok connect | https://github.com/WiNloSt/react-bangkok-connect-cloned |
+| Endpoints | description |Request fields|
+| --- | --- | ------|
+| (get)/Registration/[id] |ค้นหาข้อมูลผู้ลงทะเบียน จาก ID คืนค่า 1แถวเท่านั้น | -
+| (get)/Registration |ค้นหาข้อมูลผู้ลงทะเบียนที่เป็นไปได้ในฐานข้อมูล | ?=limit,  term, qr
+| (post)/Registration | สร้างข้อมูลผู้ลงทะเบียน | event_id, first_name, last_name, nickname, ema9l, line_id, phone_num, company_id, company_name
+| (put)/Registration/[id] | แก้ไขข้อมูลผู้ลงทะเบียน  | event_id, first_name, last_name, nickname, ema9l, line_id, phone_num, company_id, company_name
+| (get)/event/[id] | ค้นหาข้อมูลกิจกรรม | 
