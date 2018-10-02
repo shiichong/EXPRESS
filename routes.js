@@ -10,7 +10,7 @@ var jsBarcode = require('jsbarcode');
 var Canvas = require('canvas'),
     Canvas = new Canvas(400, 200)
 var AWS = require('aws-sdk'),
-transporter = require('./src/mailer');
+transpoter = require('./src/mailer');
 moment.locale('th')
 
 // @remove-on-eject-begin
@@ -32,10 +32,10 @@ module.exports = function (app) {
         const { params } = req
         // CHECK params id == integer ?
         if (parseInt(params.id)) {
-            Db.registration.findAll({ where: { registration_id: params.id } }).then(results => {
+            Db.event_registration.findAll({ where: { registration_id: params.id } }).then(results => {
                 res.send(results);
             }).catch(err => {
-                res.status(500).send({ status: failed, message: err })
+                res.status(500).send({ status: 'failed', message: err })
             })
         }
 
@@ -63,7 +63,7 @@ module.exports = function (app) {
             option.where = { ref: query.qr }
         }
         Db
-            .registration
+            .event_registration
             .findAll({ ...option })
             .then((results) => {
                 res.send({ payload: results })
@@ -75,11 +75,10 @@ module.exports = function (app) {
 
     app.post('/registration', async (req, res, next) => {
         const { body } = req
-
+        console.log(body)
 
         if (!body.event_id) {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.send({ message: 'missing event id field!' })
+            res.status(404).send({ message: 'missing event id field!' })
         }
         if (!body.first_name) {
             res.status(404).send({ message: 'missing first name field!' })
@@ -115,7 +114,7 @@ module.exports = function (app) {
             ref: makeReference(),
             created_stamp: moment().format("YYYY-MM-DD HH:mm")
         }
-        const extis_email = await Db.registration.findAll({ where: { email: data.email } })
+        const extis_email = await Db.event_registration.findAll({ where: { email: data.email } })
         if (extis_email.length > 0) {
             res.status(404).send({ message: 'already exits you\'re email' })
         } else {
@@ -143,13 +142,10 @@ module.exports = function (app) {
                 }
 
             });
-            transporter.sendMail(messageEmail,(error, success)=> {
-                if (error) {
-                     console.log(error);
-                } else {
-                    res.send({message:"Sucessfully registration"})
-                }
-             });
+            transpoter(messageEmail)
+            res.send({status:'successfully'})
+                
+           
          
         }
     })
@@ -171,6 +167,7 @@ module.exports = function (app) {
 
     app.put('/registration/:id', async (req, res, next) => {
         const { body, params } = req
+      
         if (!params.id && !parseInt(params.id)) {
             res.status(404).send({ status: 'failed', message: 'cannot put ' })
         }
@@ -206,6 +203,7 @@ module.exports = function (app) {
         if (!body.company_name) {
             res.status(404).send({ message: 'missing company name field!' })
         }
+    
         //      เตรียมข้อมูลก่อนตรงนี้  ข้อมูลจะออกมาหน้าตาประมาณนี้ {
         //         email: body.email
         //         username:body.username
@@ -225,6 +223,7 @@ module.exports = function (app) {
         }).then(function (results) {
             return results
         }).catch(err => {
+            console.log(err)
             res.status(500).send({ message: err })
         })
 
@@ -347,10 +346,10 @@ function makeReference() {
 function insertRegistration(body) {
   
     return new Promise(function (resolve, rejected) {
-        Db.registration.create(body).then(function (results) {
+        Db.event_registration.create(body).then(function (results) {
             resolve(results)
         }).catch(function (err) {
-            rejected(err)
+            rejected({status:'failed', message:err})
         })
     })
 }

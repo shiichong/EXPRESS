@@ -1,7 +1,7 @@
 // const wrap = fn => (...args) => fn(...args).catch(args[2])
 'use strict';
 module.exports = (sequelize, DataTypes) => {
-    var registration = sequelize.define('registration', {
+    var registration = sequelize.define('event_registration', {
         event_id:DataTypes.STRING,
         registration_id: {autoIncrement: true, primaryKey: true, type: DataTypes.INTEGER},
         first_name: DataTypes.STRING,

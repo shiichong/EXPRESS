@@ -91,14 +91,14 @@ module.exports = (message)=>{
                 <h4 style="color: #0c0098 !important; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-weight: 500; line-height: 1.4em; margin: 0; font-size: 14px;">at Grand Hyatt Erawan Bangkok</h4>
                 <br>
                 <br>
-                <h2 style="color: #0c0098 !important; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-weight: 400; line-height: 1.4em; margin: 0; font-size: 24px;">${templete.company}</h2>
-                <h3 style="color: #0c0098 !important; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-weight: 400; line-height: 1.4em; margin: 0; font-size: 18px;">คุณ ${templete.agency}</h3>
+                <h2 style="color: #0c0098 !important; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-weight: 400; line-height: 1.4em; margin: 0; font-size: 24px;">${message.company}</h2>
+                <h3 style="color: #0c0098 !important; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-weight: 400; line-height: 1.4em; margin: 0; font-size: 18px;">คุณ ${message.agency}</h3>
               </td>
             </tr>
     
             <tr>
               <td class="title" style="box-sizing: border-box; font-family: 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif; font-size: 14px; vertical-align: top; text-align: center;" valign="top" align="center">
-                <img src="https://s3.ap-southeast-1.amazonaws.com/probookingcenter/event/qrcode/${message.ref}}.png" style="-ms-interpolation-mode: bicubic; max-width: 100%;"> 
+                <img src="https://s3.ap-southeast-1.amazonaws.com/probookingcenter/event/qrcode/${message.ref}.png" style="-ms-interpolation-mode: bicubic; max-width: 100%;"> 
                 <br>
                 <img src="https://s3.ap-southeast-1.amazonaws.com/probookingcenter/event/barcode/${message.ref}.png" style="-ms-interpolation-mode: bicubic; max-width: 100%;">
               </td>
@@ -153,10 +153,14 @@ module.exports = (message)=>{
   var transpoter = nodemailer.createTransport({
     ...smtpConfig
   },)
+  transporter.sendMail(mailOptions,(err, callback)=>{
+    if(err) return err
+    return callback
+  })
+
   
   
   
-  return transporter
 }
 
 // setup email data with unicode symbols
